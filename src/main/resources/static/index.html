@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Processing System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f7f6; }
+        h1, h3 { color: #333; }
+        .form-group { margin-bottom: 12px; }
+        label { display: inline-block; width: 140px; font-weight: bold; }
+        input { padding: 6px; width: 220px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 6px 14px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #343a40; color: white; }
+    </style>
+</head>
+<body>
+
+<h1>Order Processing Dashboard</h1>
+
+<h3>Add Order</h3>
+<div class="form-group">
+    <label>Customer Name:</label>
+    <input type="text" id="cName">
+</div>
+<div class="form-group">
+    <label>Product Name:</label>
+    <input type="text" id="pName">
+</div>
+<div class="form-group">
+    <label>Quantity:</label>
+    <input type="number" id="qty" value="1">
+</div>
+<div class="form-group">
+    <label>Price (₹):</label>
+    <input type="number" id="price">
+</div>
+<button onclick="addOrder()">Submit Order</button>
+
+<h3>Orders Table</h3>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody id="tBody"></tbody>
+</table>
+
+<script>
+    function loadOrders() {
+        fetch('/api/orders')
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.forEach(o => {
+                    html += '<tr>' +
+                        '<td>' + o.id + '</td>' +
+                        '<td>' + o.customerName + '</td>' +
+                        '<td>' + o.productName + '</td>' +
+                        '<td>' + o.quantity + '</td>' +
+                        '<td>₹' + o.price + '</td>' +
+                        '<td>' + o.status + '</td>' +
+                        '<td>' +
+                        '<button style="background-color: #dc3545;" onclick="deleteOrder(' + o.id + ')">Delete</button> ' +
+                        '<button style="background-color: #28a745;" onclick="shipOrder(' + o.id + ')">Ship</button>' +
+                        '</td>' +
+                        '</tr>';
+                });
+                document.getElementById('tBody').innerHTML = html;
+            });
+    }
+
+    function addOrder() {
+        const bodyData = {
+            customerName: document.getElementById('cName').value,
+            productName: document.getElementById('pName').value,
+            quantity: parseInt(document.getElementById('qty').value),
+            price: parseFloat(document.getElementById('price').value)
+        };
+
+        fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+        }).then(res => {
+            if (res.ok) {
+                // Input fields-a automatic-a clear panra logic
+                document.getElementById('cName').value = '';
+                document.getElementById('pName').value = '';
+                document.getElementById('qty').value = '1';
+                document.getElementById('price').value = '';
+
+                loadOrders(); // Refresh orders table
+            } else {
+                alert('Error creating order. Check values.');
+            }
+        });
+    }
+
+    function deleteOrder(id) {
+        if (confirm("Delete indha order-a delete panna va?")) {
+            fetch('/api/orders/' + id, { method: 'DELETE' })
+                .then(() => loadOrders());
+        }
+    }
+
+    function shipOrder(id) {
+        fetch('/api/orders/' + id + '/status?status=SHIPPED', { method: 'PUT' })
+            .then(() => loadOrders());
+    }
+
+    loadOrders();
+</script>
+</body>
+</html>
